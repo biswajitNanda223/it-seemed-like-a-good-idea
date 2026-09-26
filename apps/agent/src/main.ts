@@ -17,7 +17,7 @@ app.post('/internal/v1/chat', async (req, reply) => {
   if (!parsed.success) return reply.code(400).send({error: 'invalid_request'});
   if (!inspectUserInput(parsed.data.message).allowed)
     return reply.code(422).send({error: 'unsafe_input'});
-  // HTTP adapter remains deterministic for local tests. Production traffic invokes rootAgent on Agent Engine.
+  // Local HTTP adapter stays deterministic. Production invokes rootAgent on Agent Engine.
   return {
     sessionId: parsed.data.sessionId ?? randomUUID(),
     answer:

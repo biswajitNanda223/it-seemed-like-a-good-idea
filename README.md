@@ -23,7 +23,7 @@ flowchart LR
   OBS -.-> AE
 ```
 
-The gateway is the policy enforcement point. It validates JWTs, derives tenant identity from signed claims (never request bodies), rate-limits, applies input guardrails, and uses tenant-scoped cache keys. The ADK agent uses a citation-first prompt and treats retrieval output as untrusted data. Ingestion is isolated from request serving so document parsing and indexing can scale independently.
+The gateway is the policy enforcement point. It validates JWTs, derives tenant identity from signed claims (never request bodies), rate-limits, applies input guardrails, and uses tenant-scoped cache keys. The ADK agent uses the native `VertexRagRetrievalTool` and `VertexAiRagMemoryService`, a citation-first prompt, and treats retrieval output as untrusted data. Ingestion is isolated from request serving so document parsing and indexing can scale independently.
 
 ## Repository layout
 
@@ -64,7 +64,7 @@ Set `GOOGLE_GENAI_USE_VERTEXAI=true`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_
 
 1. Create/select a billing account and choose a globally unique project ID.
 2. Apply Terraform (see [deployment guide](docs/deployment.md)).
-3. Create a Vertex AI RAG corpus and put its resource name in Secret Manager.
+3. Create a Vertex AI RAG corpus per security boundary and put its resource name in Secret Manager. Do not mix tenants in a corpus unless every retrieval call enforces metadata ACL filters.
 4. Deploy the exported `rootAgent` to Agent Engine with the ADK CLI.
 5. Build/push the service image, apply the Kustomize overlay, configure DNS and a certificate.
 

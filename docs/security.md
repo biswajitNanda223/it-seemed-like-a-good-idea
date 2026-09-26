@@ -8,7 +8,7 @@ Controls are layered:
 2. JWT verification pins issuer, audience, and RS256; tenant identity is never caller-supplied JSON.
 3. Zod validates every boundary. Fastify limits body size and time; rate limits apply by identity.
 4. The agent has an allowlist of typed tools. Retrieved content is explicitly untrusted and cannot redefine instructions.
-5. Cache, SQL, corpus, and object paths are tenant-scoped. PostgreSQL row-level security should be added if direct tenant SQL access is introduced.
+5. Cache, SQL, and object paths are tenant-scoped. Use one RAG corpus per tenant/security boundary (the current native ADK tool accepts a configured corpus); never point a shared runtime at a cross-tenant corpus. PostgreSQL row-level security should be added if direct tenant SQL access is introduced.
 6. Workload Identity supplies short-lived credentials. Secret Manager and External Secrets provide runtime configuration.
 7. Containers run non-root with a read-only filesystem, dropped capabilities, resource limits, probes, and disruption budgets.
 8. Logs redact authorization and common PII. Do not log prompts or retrieved chunks by default.

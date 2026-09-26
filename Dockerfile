@@ -8,6 +8,7 @@ COPY packages/cache/package.json packages/cache/package.json
 COPY packages/config/package.json packages/config/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
 COPY packages/database/package.json packages/database/package.json
+COPY packages/databricks/package.json packages/databricks/package.json
 COPY packages/security/package.json packages/security/package.json
 RUN npm ci
 

@@ -26,3 +26,7 @@ npm run deploy:engine -w @app/agent
 ```
 
 The exact ADK CLI flags may change by SDK release; verify with `npx adk deploy agent_engine --help`. Capture the deployed Agent Engine resource name in Secret Manager and configure the gateway adapter to call it with Workload Identity credentials.
+
+## Databricks setup
+
+Create a Databricks service principal with only the permissions described in [the LLD](lld-databricks.md). Configure a read-only SQL warehouse, Delta Sync AI Search index containing `tenant_id` and citation fields, and approved Unity Catalog views. Set `RETRIEVAL_BACKEND=databricks` or `hybrid`; store `DATABRICKS_CLIENT_SECRET` in Secret Manager and supply all other `DATABRICKS_*` variables from environment configuration.

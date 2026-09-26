@@ -12,6 +12,7 @@ Controls are layered:
 6. Workload Identity supplies short-lived credentials. Secret Manager and External Secrets provide runtime configuration.
 7. Containers run non-root with a read-only filesystem, dropped capabilities, resource limits, probes, and disruption budgets.
 8. Logs redact authorization and common PII. Do not log prompts or retrieved chunks by default.
+9. Databricks access uses an OAuth M2M service principal, a read-only SQL warehouse, Unity Catalog ABAC/row filters and masks, allowlisted agent-facing views, and mandatory application tenant predicates.
 
 Static regex checks are an early rejection layer, not a complete prompt-injection defense. Production must add model safety filters, DLP scanning, retrieval ACL filters, output validation, groundedness evals, tool confirmation for side effects, and human approval for high-impact operations.
 

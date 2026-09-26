@@ -1,6 +1,6 @@
 # Agentic RAG Platform
 
-Production-oriented, multi-tenant semantic RAG built with TypeScript, Fastify, Google ADK, Vertex AI Agent Engine, Vertex AI RAG, PostgreSQL/Prisma, Redis, GKE Gateway API, Terraform, and GitLab CI/CD.
+Production-oriented, multi-tenant semantic RAG built with TypeScript, Fastify, Google ADK, Vertex AI Agent Engine, Databricks SQL and AI Search, optional Vertex AI RAG, PostgreSQL/Prisma, Redis, GKE Gateway API, Terraform, and GitLab CI/CD.
 
 > “Google AX” is implemented here as Google **ADK + Vertex AI Agent Engine**. The code targets `@google/adk` 2.1.x. No credentials are committed.
 
@@ -12,6 +12,10 @@ flowchart LR
   GW --> API[Fastify API Gateway]
   API -->|private identity headers| AE[Vertex AI Agent Engine\nGoogle ADK Agent]
   AE --> RAG[Vertex AI RAG Corpus]
+  AE --> DBXV[Databricks AI Search]
+  AE --> DBXS[Databricks SQL Warehouse]
+  DBXV --> UC[Unity Catalog / Delta]
+  DBXS --> UC
   AE --> GEM[Gemini on Vertex AI]
   API --> REDIS[(Memorystore / Redis)]
   API --> PG[(Cloud SQL PostgreSQL)]
@@ -38,6 +42,7 @@ packages/
   contracts/     Zod API contracts
   database/      Prisma schema/client for durable metadata and history
   security/      JWT verification, logging redaction, prompt-injection checks
+  databricks/    OAuth M2M, AI Search, and allowlisted parameterized SQL
 infra/
   k8s/           GKE Gateway API, HPA, PDB, NetworkPolicy, ExternalSecret
   terraform/     project, APIs, Artifact Registry, Autopilot GKE, Workload Identity
@@ -90,7 +95,7 @@ Authentication is an RS256 OIDC bearer JWT with `sub`, `tenant_id`, and optional
 - Configure alert policies for p95 latency, 5xx, safety rejection rate, cache health, token usage, and RAG grounding quality.
 - Use GitLab Workload Identity Federation; never store service-account JSON keys.
 
-See [architecture](docs/architecture.md), [security](docs/security.md), [memory and cache](docs/memory-cache.md), and [operations](docs/operations.md).
+See [architecture](docs/architecture.md), [Databricks HLD](docs/hld-databricks.md), [Databricks LLD](docs/lld-databricks.md), [security](docs/security.md), [memory and cache](docs/memory-cache.md), and [operations](docs/operations.md).
 
 ## License
 

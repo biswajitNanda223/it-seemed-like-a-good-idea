@@ -15,6 +15,7 @@
     "@google/adk": "^2.1.0",
     "@platform/config": "*",
     "@platform/contracts": "*",
+    "@platform/databricks": "*",
     "@platform/database": "*",
     "@platform/security": "*",
     "fastify": "^5.6.1",

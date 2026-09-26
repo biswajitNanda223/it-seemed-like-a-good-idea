@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "npm run build:packages && npm run build:apps",
-    "build:packages": "npm run build -w @platform/contracts -w @platform/config -w @platform/database -w @platform/cache -w @platform/security",
+    "build:packages": "npm run build -w @platform/contracts -w @platform/config -w @platform/database -w @platform/cache -w @platform/security -w @platform/databricks",
     "build:apps": "npm run build -w @app/agent -w @app/gateway -w @app/ingestion",
     "dev": "npm run dev -w @app/gateway",
     "lint": "eslint .",

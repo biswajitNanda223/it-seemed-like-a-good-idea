@@ -1,8 +1,8 @@
 # Agentic RAG Platform
 
-Production-oriented, multi-tenant semantic RAG built with TypeScript, Fastify, Google ADK, Vertex AI Agent Engine, Databricks SQL and AI Search, optional Vertex AI RAG, PostgreSQL/Prisma, Redis, GKE Gateway API, Terraform, and GitLab CI/CD.
+Production-oriented, multi-tenant semantic RAG built with TypeScript, Fastify, Google ADK, the actual Google AX runtime, Vertex AI Agent Engine, Databricks SQL and AI Search, optional Vertex AI RAG, PostgreSQL/Prisma, Redis, GKE Gateway API, Terraform, and GitLab CI/CD.
 
-> “Google AX” is implemented here as Google **ADK + Vertex AI Agent Engine**. The code targets `@google/adk` 2.1.x. No credentials are committed.
+Google AX and Google ADK are separate integrations. ADK + Agent Engine serves online RAG traffic; AX runs isolated autonomous audit/evaluation workloads. AX is `v1alpha1`, so it is pinned and kept out of the serving dependency path. No credentials are committed.
 
 ## Architecture
 
@@ -25,6 +25,8 @@ flowchart LR
   SM[Secret Manager] -.-> API
   OBS[Cloud Logging / Trace / Monitoring] -.-> API
   OBS -.-> AE
+  AX[Google AX / Agent Substrate] -->|isolated audit tasks| AXW[Ephemeral actor workspace]
+  AXW -->|read-only validation| CI[GitLab CI]
 ```
 
 The gateway is the policy enforcement point. It validates JWTs, derives tenant identity from signed claims (never request bodies), rate-limits, applies input guardrails, and uses tenant-scoped cache keys. The ADK agent uses the native `VertexRagRetrievalTool` and `VertexAiRagMemoryService`, a citation-first prompt, and treats retrieval output as untrusted data. Ingestion is isolated from request serving so document parsing and indexing can scale independently.
@@ -45,6 +47,7 @@ packages/
   databricks/    OAuth M2M, AI Search, and allowlisted parameterized SQL
 infra/
   k8s/           GKE Gateway API, queue-driven KEDA jobs, PDB, NetworkPolicy, ExternalSecret
+  ax/            Google AX Workspace, Model, and Task resources with upstream pin
   terraform/     project, APIs, Artifact Registry, Autopilot GKE, Workload Identity
 docs/            architecture, security, operations, and deployment guides
 ```
@@ -95,7 +98,7 @@ Authentication is an RS256 OIDC bearer JWT with `sub`, `tenant_id`, and optional
 - Configure alert policies for p95 latency, 5xx, safety rejection rate, cache health, token usage, and RAG grounding quality.
 - Use GitLab Workload Identity Federation; never store service-account JSON keys.
 
-See [architecture](docs/architecture.md), [Databricks HLD](docs/hld-databricks.md), [Databricks LLD](docs/lld-databricks.md), [security](docs/security.md), [memory and cache](docs/memory-cache.md), and [operations](docs/operations.md).
+See [architecture](docs/architecture.md), [Google AX HLD/LLD](docs/google-ax.md), [Databricks HLD](docs/hld-databricks.md), [Databricks LLD](docs/lld-databricks.md), [security](docs/security.md), [memory and cache](docs/memory-cache.md), and [operations](docs/operations.md).
 
 ## License
 

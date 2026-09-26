@@ -22,7 +22,8 @@
     "prisma:generate": "prisma generate --schema packages/database/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate deploy --schema packages/database/prisma/schema.prisma",
     "security:secrets": "secretlint \"**/*.ts\" \"**/*.js\" \"**/*.json\" \"**/*.yml\" \"**/*.yaml\" \"**/*.md\" \"**/*.tf\"",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run security:secrets"
+    "ax:validate": "node scripts/validate-ax-manifests.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run ax:validate && npm run security:secrets"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
@@ -35,6 +36,7 @@
     "secretlint": "^11.3.1",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.46.0",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "yaml": "^2.8.1"
   }
 }

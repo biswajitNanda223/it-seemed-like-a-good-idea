@@ -41,6 +41,7 @@ sequenceDiagram
 - Governed lakehouse access: Databricks structured tools compile only allowlisted parameterized view reads; semantic tools enforce tenant metadata filters.
 - At-least-once ingestion: BullMQ job IDs and document upsert keys make retries idempotent; workers should publish status transitions transactionally.
 - Queue-driven Pods: the BullMQ Redis waiting list creates one-shot KEDA jobs that claim, process, complete, and exit; the gateway is not coupled to ingestion concurrency.
+- Separated autonomy plane: Google AX runs sandboxed, bounded audit/evaluation tasks and is never on the synchronous ADK/Agent Engine request path.
 
 ## Retrieval pipeline
 

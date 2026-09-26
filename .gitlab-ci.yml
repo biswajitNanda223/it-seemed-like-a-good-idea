@@ -7,10 +7,18 @@ default:
 
 variables:
   IMAGE: '$GAR_LOCATION-docker.pkg.dev/$GCP_PROJECT_ID/$GAR_REPOSITORY/platform'
+  AX_IMAGE: '$GAR_LOCATION-docker.pkg.dev/$GCP_PROJECT_ID/$GAR_REPOSITORY/ax-task-runner'
 
 validate:
   stage: validate
-  script: ['npm run format:check', 'npm run lint', 'npm run typecheck', 'npm run security:secrets']
+  script:
+    [
+      'npm run format:check',
+      'npm run lint',
+      'npm run typecheck',
+      'npm run ax:validate',
+      'npm run security:secrets',
+    ]
 
 test:
   stage: test
@@ -27,6 +35,16 @@ build-image:
     ]
   rules: [{if: '$CI_COMMIT_BRANCH'}]
 
+build-ax-image:
+  stage: build
+  image: gcr.io/kaniko-project/executor:v1.23.2-debug
+  before_script: []
+  script:
+    [
+      '/kaniko/executor --context $CI_PROJECT_DIR --dockerfile $CI_PROJECT_DIR/Dockerfile.ax --destination $AX_IMAGE:$CI_COMMIT_SHA',
+    ]
+  rules: [{if: '$CI_COMMIT_BRANCH'}]
+
 container-scan:
   stage: scan
   image: aquasec/trivy:0.66.0
@@ -34,6 +52,14 @@ container-scan:
   script:
     ['trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed $IMAGE:$CI_COMMIT_SHA']
   needs: [build-image]
+
+ax-container-scan:
+  stage: scan
+  image: aquasec/trivy:0.66.0
+  before_script: []
+  script:
+    ['trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed $AX_IMAGE:$CI_COMMIT_SHA']
+  needs: [build-ax-image]
 
 deploy-staging:
   stage: deploy

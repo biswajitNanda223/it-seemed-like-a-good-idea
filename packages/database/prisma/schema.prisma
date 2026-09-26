@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String    @id @db.VarChar(64)
+  name      String    @db.VarChar(255)
+  sessions Session[]
+  documents Document[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Session {
+  id         String    @id @default(uuid())
+  tenantId   String
+  userId     String    @db.VarChar(128)
+  summary    String?
+  version    Int       @default(0)
+  expiresAt  DateTime
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages   Message[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([tenantId, userId])
+  @@index([expiresAt])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  sessionId  String
+  role       MessageRole
+  content    String
+  tokenCount Int?
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model Document {
+  id          String         @id @default(uuid())
+  tenantId    String
+  sourceUri   String
+  displayName String
+  status      DocumentStatus @default(PENDING)
+  checksum    String?
+  error       String?
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@unique([tenantId, sourceUri])
+  @@index([tenantId, status])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum DocumentStatus {
+  PENDING
+  INDEXING
+  READY
+  FAILED
+}

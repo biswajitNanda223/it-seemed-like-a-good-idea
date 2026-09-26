@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: gateway, namespace: agentic-rag}
+spec:
+  replicas: 3
+  selector: {matchLabels: {app: gateway}}
+  template:
+    metadata: {labels: {app: gateway}}
+    spec:
+      serviceAccountName: platform-runtime
+      securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: gateway
+          image: REGION-docker.pkg.dev/PROJECT_ID/platform/gateway:latest
+          ports: [{name: http, containerPort: 8080}]
+          envFrom: [{configMapRef: {name: platform-config}}, {secretRef: {name: platform-secrets}}]
+          resources: {requests: {cpu: 250m, memory: 256Mi}, limits: {cpu: '1', memory: 512Mi}}
+          readinessProbe:
+            {httpGet: {path: /health/ready, port: http}, initialDelaySeconds: 5, periodSeconds: 5}
+          livenessProbe:
+            {httpGet: {path: /health/live, port: http}, initialDelaySeconds: 10, periodSeconds: 10}
+          securityContext:
+            {
+              allowPrivilegeEscalation: false,
+              readOnlyRootFilesystem: true,
+              capabilities: {drop: [ALL]},
+            }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: {matchLabels: {app: gateway}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: gateway, namespace: agentic-rag}
+spec: {selector: {app: gateway}, ports: [{name: http, port: 80, targetPort: http}]}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: gateway, namespace: agentic-rag}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: gateway}
+  minReplicas: 3
+  maxReplicas: 30
+  behavior: {scaleDown: {stabilizationWindowSeconds: 300}}
+  metrics:
+    - type: Resource
+      resource: {name: cpu, target: {type: Utilization, averageUtilization: 65}}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: gateway, namespace: agentic-rag}
+spec: {minAvailable: 2, selector: {matchLabels: {app: gateway}}}

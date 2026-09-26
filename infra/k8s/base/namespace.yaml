@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: agentic-rag}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: platform-runtime
+  namespace: agentic-rag
+  annotations:
+    iam.gke.io/gcp-service-account: platform-runtime@PROJECT_ID.iam.gserviceaccount.com

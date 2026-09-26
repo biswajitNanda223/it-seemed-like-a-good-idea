@@ -1,0 +1,27 @@
+{
+  "name": "@app/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "adk:web": "adk web src/agent.ts",
+    "deploy:engine": "adk deploy agent_engine src/agent.ts --project=$GCP_PROJECT_ID --region=$GCP_LOCATION"
+  },
+  "dependencies": {
+    "@google/adk": "^2.1.0",
+    "@platform/config": "*",
+    "@platform/contracts": "*",
+    "@platform/database": "*",
+    "@platform/security": "*",
+    "fastify": "^5.6.1",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@google/adk-devtools": "^2.1.0",
+    "tsx": "^4.20.6"
+  }
+}

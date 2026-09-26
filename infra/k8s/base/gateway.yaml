@@ -1,0 +1,27 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata: {name: public-gateway, namespace: agentic-rag}
+spec:
+  gatewayClassName: gke-l7-global-external-managed
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: api.example.com
+      tls: {mode: Terminate, certificateRefs: [{name: api-tls}]}
+      allowedRoutes: {namespaces: {from: Same}}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata: {name: gateway, namespace: agentic-rag}
+spec:
+  parentRefs: [{name: public-gateway}]
+  hostnames: [api.example.com]
+  rules:
+    - matches: [{path: {type: PathPrefix, value: /}}]
+      backendRefs: [{name: gateway, port: 80}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: default-deny, namespace: agentic-rag}
+spec: {podSelector: {}, policyTypes: [Ingress, Egress]}

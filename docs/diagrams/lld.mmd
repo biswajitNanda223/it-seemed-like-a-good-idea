@@ -1,0 +1,30 @@
+sequenceDiagram
+  autonumber
+  actor User
+  participant Edge as GKE Gateway
+  participant API as Fastify gateway
+  participant Cache as Redis cache
+  participant Agent as ADK on Agent Engine
+  participant Memory as Session memory
+  participant DBX as Databricks / Vertex RAG
+  participant LLM as Gemini
+
+  User->>Edge: POST /v1/chat + bearer JWT
+  Edge->>API: Forward validated TLS request
+  API->>API: Verify JWT, schema, tenant, rate and guardrails
+  API->>Cache: Get tenant-scoped response key
+  alt cache hit
+    Cache-->>API: Grounded cached response
+  else cache miss
+    API->>Agent: Message + trusted identity context
+    Agent->>Memory: Load bounded session and summary
+    Agent->>DBX: Tenant-filtered semantic or allowlisted SQL retrieval
+    DBX-->>Agent: Evidence, citations and source metadata
+    Agent->>Agent: Treat evidence as data and apply output guardrails
+    Agent->>LLM: Bounded prompt, tools and evidence
+    LLM-->>Agent: Candidate grounded answer
+    Agent->>Memory: Persist turn and rolling summary
+    Agent-->>API: Answer, citations and session ID
+    API->>Cache: Store safe response with TTL
+  end
+  API-->>User: Response + request ID

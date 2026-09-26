@@ -1,0 +1,42 @@
+flowchart TB
+  Client[Enterprise clients] -->|HTTPS and OIDC JWT| Gateway[GKE Gateway API]
+  Gateway --> API[Fastify policy gateway]
+
+  subgraph Online[Online serving plane]
+    API -->|trusted tenant context| AgentEngine[Vertex AI Agent Engine]
+    AgentEngine --> ADK[Google ADK agent]
+    ADK --> Gemini[Gemini on Vertex AI]
+    ADK --> VertexRAG[Vertex AI RAG]
+    ADK --> DBSearch[Databricks AI Search]
+    ADK --> DBSQL[Databricks SQL Warehouse]
+    DBSearch --> Unity[Unity Catalog and Delta]
+    DBSQL --> Unity
+    API --> Cache[(Redis response cache)]
+    API --> PostgreSQL[(Cloud SQL PostgreSQL)]
+  end
+
+  subgraph Ingestion[Queue-driven ingestion plane]
+    Uploads[Cloud Storage] --> Producer[Ingestion producer]
+    Producer --> Queue[(BullMQ Redis queue)]
+    Queue -->|KEDA ScaledJob, no HPA| Workers[Ephemeral ingestion workers]
+    Workers --> VertexRAG
+    Workers --> PostgreSQL
+  end
+
+  subgraph Autonomy[Isolated autonomy plane]
+    AX[Google AX control plane] --> Substrate[Agent Substrate]
+    Substrate --> Actor[Sandboxed ephemeral actor]
+    Actor --> Repo[Read-only Git workspace]
+    Actor --> Audit[Evaluation and audit results]
+  end
+
+  Secrets[Secret Manager and Workload Identity] -.-> API
+  Secrets -.-> AgentEngine
+  Observe[Cloud Logging, Trace and Monitoring] -.-> API
+  Observe -.-> AgentEngine
+  Observe -.-> Workers
+  Observe -.-> Actor
+  CICD[GitLab CI/CD with WIF] --> Registry[Artifact Registry]
+  Registry --> API
+  Registry --> Workers
+  Registry --> Actor

@@ -73,7 +73,7 @@ Set `GOOGLE_GENAI_USE_VERTEXAI=true`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_
 4. Deploy the exported `rootAgent` to Agent Engine with the ADK CLI.
 5. Build/push the service image, apply the Kustomize overlay, configure DNS and a certificate.
 
-Agent Engine is the managed Google ADK runtime and scales independently. GKE keeps three gateway replicas for synchronous traffic; ingestion is queue-driven through Pub/Sub and KEDA `ScaledJob`, creating short-lived worker Pods per backlog without an application HPA.
+Agent Engine is the managed Google ADK runtime and scales independently. GKE keeps three gateway replicas for synchronous traffic; ingestion is queue-driven through BullMQ on Redis and KEDA `ScaledJob`, creating short-lived worker Pods from the `bull:ingestion:wait` backlog without an application HPA.
 
 ## API
 

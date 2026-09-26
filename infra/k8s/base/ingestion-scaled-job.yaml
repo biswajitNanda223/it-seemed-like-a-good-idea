@@ -1,10 +1,4 @@
 apiVersion: keda.sh/v1alpha1
-kind: TriggerAuthentication
-metadata: {name: gcp-workload-identity, namespace: agentic-rag}
-spec:
-  podIdentity: {provider: gcp}
----
-apiVersion: keda.sh/v1alpha1
 kind: ScaledJob
 metadata: {name: ingestion-worker, namespace: agentic-rag}
 spec:
@@ -16,7 +10,7 @@ spec:
   scalingStrategy: {strategy: accurate, pendingPodConditions: [PodScheduled]}
   jobTargetRef:
     activeDeadlineSeconds: 300
-    backoffLimit: 3
+    backoffLimit: 0
     ttlSecondsAfterFinished: 600
     template:
       metadata: {labels: {app: ingestion-worker}}
@@ -31,8 +25,10 @@ spec:
             envFrom:
               [{configMapRef: {name: platform-config}}, {secretRef: {name: platform-secrets}}]
             env:
-              - name: PUBSUB_INGESTION_SUBSCRIPTION
-                value: projects/PROJECT_ID/subscriptions/agentic-rag-ingestion
+              - name: QUEUE_REDIS_HOST
+                valueFrom: {secretKeyRef: {name: platform-secrets, key: QUEUE_REDIS_HOST}}
+              - name: QUEUE_REDIS_PASSWORD
+                valueFrom: {secretKeyRef: {name: platform-secrets, key: QUEUE_REDIS_PASSWORD}}
             resources: {requests: {cpu: 250m, memory: 256Mi}, limits: {cpu: '1', memory: 512Mi}}
             securityContext:
               {
@@ -41,10 +37,11 @@ spec:
                 capabilities: {drop: [ALL]},
               }
   triggers:
-    - type: gcp-pubsub
-      authenticationRef: {name: gcp-workload-identity}
+    - type: redis
       metadata:
-        subscriptionName: projects/PROJECT_ID/subscriptions/agentic-rag-ingestion
-        mode: SubscriptionSize
-        value: '1'
-        activationValue: '0'
+        addressFromEnv: QUEUE_REDIS_HOST
+        passwordFromEnv: QUEUE_REDIS_PASSWORD
+        listName: bull:ingestion:wait
+        listLength: '1'
+        activationListLength: '0'
+        enableTLS: 'true'

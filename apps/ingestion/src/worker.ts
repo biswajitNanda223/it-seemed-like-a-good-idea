@@ -1,28 +1,35 @@
-import {v1} from '@google-cloud/pubsub';
-import {queuedIngestRequestSchema} from '@platform/contracts';
+import {Worker} from 'bullmq';
+import {queuedIngestRequestSchema, type QueuedIngestRequest} from '@platform/contracts';
 import {database} from '@platform/database';
 import {getConfig} from '@platform/config';
 import {registerDocument} from './documents.js';
+import {INGESTION_QUEUE, redisConnection} from './queue.js';
 
 const config = getConfig();
-const subscription = process.env['PUBSUB_INGESTION_SUBSCRIPTION'];
-if (!subscription) throw new Error('PUBSUB_INGESTION_SUBSCRIPTION is required');
-
-const subscriber = new v1.SubscriberClient();
-const [response] = await subscriber.pull(
-  {subscription, maxMessages: 1},
-  {timeout: 60_000, otherArgs: {headers: {'x-goog-user-project': config.GCP_PROJECT_ID}}},
+let settle: (() => void) | undefined;
+let reject: ((error: Error) => void) | undefined;
+const completed = new Promise<void>((resolve, rejectPromise) => {
+  settle = resolve;
+  reject = rejectPromise;
+});
+const worker = new Worker<QueuedIngestRequest>(
+  INGESTION_QUEUE,
+  async (job) => {
+    const payload = queuedIngestRequestSchema.parse(job.data);
+    await registerDocument(payload.tenantId, payload);
+  },
+  {connection: redisConnection(config.QUEUE_REDIS_URL), concurrency: 1, autorun: false},
 );
-const message = response.receivedMessages?.[0];
-if (!message?.message?.data || !message.ackId) process.exit(0);
+worker.once('completed', () => settle?.());
+worker.on('failed', (job, error) => {
+  const attempts = job?.opts.attempts ?? 1;
+  if ((job?.attemptsMade ?? attempts) >= attempts) reject?.(error);
+});
 
 try {
-  const payload = queuedIngestRequestSchema.parse(
-    JSON.parse(Buffer.from(message.message.data).toString('utf8')),
-  );
-  await registerDocument(payload.tenantId, payload);
-  await subscriber.acknowledge({subscription, ackIds: [message.ackId]});
+  void worker.run();
+  await completed;
 } finally {
-  await subscriber.close();
+  await worker.close();
   await database.$disconnect();
 }

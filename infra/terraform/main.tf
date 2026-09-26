@@ -5,7 +5,7 @@ resource "google_project" "project" {
   org_id          = var.organization_id
 }
 
-locals { services = toset(["aiplatform.googleapis.com", "artifactregistry.googleapis.com", "container.googleapis.com", "redis.googleapis.com", "sqladmin.googleapis.com", "secretmanager.googleapis.com", "iamcredentials.googleapis.com", "cloudtrace.googleapis.com", "logging.googleapis.com", "monitoring.googleapis.com", "pubsub.googleapis.com"]) }
+locals { services = toset(["aiplatform.googleapis.com", "artifactregistry.googleapis.com", "container.googleapis.com", "redis.googleapis.com", "sqladmin.googleapis.com", "secretmanager.googleapis.com", "iamcredentials.googleapis.com", "cloudtrace.googleapis.com", "logging.googleapis.com", "monitoring.googleapis.com"]) }
 resource "google_project_service" "apis" {for_each = local.services; project = google_project.project.project_id; service = each.value; disable_on_destroy = false}
 
 resource "google_artifact_registry_repository" "platform" {
@@ -19,22 +19,6 @@ resource "google_service_account" "runtime" {account_id = "platform-runtime"; di
 resource "google_project_iam_member" "runtime_vertex" {project = google_project.project.project_id; role = "roles/aiplatform.user"; member = "serviceAccount:${google_service_account.runtime.email}"}
 resource "google_project_iam_member" "runtime_trace" {project = google_project.project.project_id; role = "roles/cloudtrace.agent"; member = "serviceAccount:${google_service_account.runtime.email}"}
 resource "google_project_iam_member" "runtime_log" {project = google_project.project.project_id; role = "roles/logging.logWriter"; member = "serviceAccount:${google_service_account.runtime.email}"}
-resource "google_project_iam_member" "runtime_pubsub_subscriber" {project = google_project.project.project_id; role = "roles/pubsub.subscriber"; member = "serviceAccount:${google_service_account.runtime.email}"}
-resource "google_project_iam_member" "runtime_pubsub_publisher" {project = google_project.project.project_id; role = "roles/pubsub.publisher"; member = "serviceAccount:${google_service_account.runtime.email}"}
-
-resource "google_pubsub_topic" "ingestion" {
-  name       = "agentic-rag-ingestion"
-  depends_on = [google_project_service.apis]
-}
-
-resource "google_pubsub_subscription" "ingestion" {
-  name                       = "agentic-rag-ingestion"
-  topic                      = google_pubsub_topic.ingestion.id
-  ack_deadline_seconds       = 300
-  message_retention_duration = "604800s"
-  expiration_policy {ttl = ""}
-  retry_policy {minimum_backoff = "10s"; maximum_backoff = "300s"}
-}
 
 resource "google_container_cluster" "primary" {
   name = "agentic-rag"
@@ -51,12 +35,6 @@ resource "google_service_account_iam_member" "workload_identity" {
   service_account_id = google_service_account.runtime.name
   role = "roles/iam.workloadIdentityUser"
   member = "serviceAccount:${google_project.project.project_id}.svc.id.goog[agentic-rag/platform-runtime]"
-}
-
-resource "google_project_iam_member" "keda_monitoring" {
-  project = google_project.project.project_id
-  role    = "roles/monitoring.viewer"
-  member  = "principal://iam.googleapis.com/projects/${google_project.project.number}/locations/global/workloadIdentityPools/${google_project.project.project_id}.svc.id.goog/subject/ns/keda/sa/keda-operator"
 }
 
 output "project_id" {value = google_project.project.project_id}

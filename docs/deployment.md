@@ -12,13 +12,15 @@ terraform apply
 
 Then create Cloud SQL, Memorystore, the RAG corpus, and the `agentic-rag-production` Secret Manager object with environment-specific private networking. Build and push an image to Artifact Registry. Replace placeholders in the Kustomize overlay and apply it:
 
-Install KEDA before applying the platform manifests. Bind its operator identity to `roles/monitoring.viewer` as provisioned by Terraform:
+Install KEDA before applying the platform manifests. The Redis scaler reads the production Redis endpoint and password from the worker Pod environment sourced through External Secrets:
 
 ```bash
 helm repo add kedacore https://kedacore.github.io/charts
 helm repo update
 helm upgrade --install keda kedacore/keda --namespace keda --create-namespace
 ```
+
+Provision a dedicated Redis instance for BullMQ with persistence, TLS/auth, private networking, and `maxmemory-policy=noeviction`. Put `QUEUE_REDIS_URL`, `QUEUE_REDIS_HOST`, and `QUEUE_REDIS_PASSWORD` in Secret Manager. The response cache uses a different Redis instance and may use an eviction policy.
 
 ```bash
 gcloud container clusters get-credentials agentic-rag --region us-central1 --project UNIQUE_PROJECT_ID

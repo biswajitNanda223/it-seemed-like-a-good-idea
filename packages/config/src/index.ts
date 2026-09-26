@@ -9,6 +9,7 @@ const schema = z
     AGENT_SERVICE_URL: z.string().url().default('http://localhost:8081'),
     DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().url(),
+    QUEUE_REDIS_URL: z.string().url().default('redis://localhost:6380'),
     GCP_PROJECT_ID: z.string().min(1),
     GCP_LOCATION: z.string().default('us-central1'),
     GOOGLE_GENAI_USE_VERTEXAI: bool.default(true),

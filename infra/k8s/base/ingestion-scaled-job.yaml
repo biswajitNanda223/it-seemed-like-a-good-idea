@@ -1,0 +1,50 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata: {name: gcp-workload-identity, namespace: agentic-rag}
+spec:
+  podIdentity: {provider: gcp}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata: {name: ingestion-worker, namespace: agentic-rag}
+spec:
+  pollingInterval: 10
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  maxReplicaCount: 50
+  rollout: {strategy: gradual}
+  scalingStrategy: {strategy: accurate, pendingPodConditions: [PodScheduled]}
+  jobTargetRef:
+    activeDeadlineSeconds: 300
+    backoffLimit: 3
+    ttlSecondsAfterFinished: 600
+    template:
+      metadata: {labels: {app: ingestion-worker}}
+      spec:
+        restartPolicy: Never
+        serviceAccountName: platform-runtime
+        securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+        containers:
+          - name: ingestion-worker
+            image: REGION-docker.pkg.dev/PROJECT_ID/platform/ingestion:latest
+            command: [node, apps/ingestion/dist/worker.js]
+            envFrom:
+              [{configMapRef: {name: platform-config}}, {secretRef: {name: platform-secrets}}]
+            env:
+              - name: PUBSUB_INGESTION_SUBSCRIPTION
+                value: projects/PROJECT_ID/subscriptions/agentic-rag-ingestion
+            resources: {requests: {cpu: 250m, memory: 256Mi}, limits: {cpu: '1', memory: 512Mi}}
+            securityContext:
+              {
+                allowPrivilegeEscalation: false,
+                readOnlyRootFilesystem: true,
+                capabilities: {drop: [ALL]},
+              }
+  triggers:
+    - type: gcp-pubsub
+      authenticationRef: {name: gcp-workload-identity}
+      metadata:
+        subscriptionName: projects/PROJECT_ID/subscriptions/agentic-rag-ingestion
+        mode: SubscriptionSize
+        value: '1'
+        activationValue: '0'

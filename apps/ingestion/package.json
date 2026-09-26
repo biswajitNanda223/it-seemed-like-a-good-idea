@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@google-cloud/pubsub": "^5.2.0",
     "@platform/config": "*",
     "@platform/contracts": "*",
     "@platform/database": "*",

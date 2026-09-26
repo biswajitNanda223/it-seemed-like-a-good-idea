@@ -12,6 +12,14 @@ terraform apply
 
 Then create Cloud SQL, Memorystore, the RAG corpus, and the `agentic-rag-production` Secret Manager object with environment-specific private networking. Build and push an image to Artifact Registry. Replace placeholders in the Kustomize overlay and apply it:
 
+Install KEDA before applying the platform manifests. Bind its operator identity to `roles/monitoring.viewer` as provisioned by Terraform:
+
+```bash
+helm repo add kedacore https://kedacore.github.io/charts
+helm repo update
+helm upgrade --install keda kedacore/keda --namespace keda --create-namespace
+```
+
 ```bash
 gcloud container clusters get-credentials agentic-rag --region us-central1 --project UNIQUE_PROJECT_ID
 kubectl apply -k infra/k8s/overlays/production

@@ -44,7 +44,7 @@ packages/
   security/      JWT verification, logging redaction, prompt-injection checks
   databricks/    OAuth M2M, AI Search, and allowlisted parameterized SQL
 infra/
-  k8s/           GKE Gateway API, HPA, PDB, NetworkPolicy, ExternalSecret
+  k8s/           GKE Gateway API, queue-driven KEDA jobs, PDB, NetworkPolicy, ExternalSecret
   terraform/     project, APIs, Artifact Registry, Autopilot GKE, Workload Identity
 docs/            architecture, security, operations, and deployment guides
 ```
@@ -73,7 +73,7 @@ Set `GOOGLE_GENAI_USE_VERTEXAI=true`, `GOOGLE_CLOUD_PROJECT`, and `GOOGLE_CLOUD_
 4. Deploy the exported `rootAgent` to Agent Engine with the ADK CLI.
 5. Build/push the service image, apply the Kustomize overlay, configure DNS and a certificate.
 
-Agent Engine is the managed agent runtime; GKE runs the gateway and ingestion control plane. This separation prevents scaling model orchestration and HTTP ingress as one failure domain.
+Agent Engine is the managed Google ADK runtime and scales independently. GKE keeps three gateway replicas for synchronous traffic; ingestion is queue-driven through Pub/Sub and KEDA `ScaledJob`, creating short-lived worker Pods per backlog without an application HPA.
 
 ## API
 

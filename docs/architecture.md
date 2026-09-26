@@ -40,6 +40,7 @@ sequenceDiagram
 - Bounded agent autonomy: allowlisted tools, explicit schemas, max input/body/time budgets, and no arbitrary code execution.
 - Governed lakehouse access: Databricks structured tools compile only allowlisted parameterized view reads; semantic tools enforce tenant metadata filters.
 - At-least-once ingestion: document upsert keys make retries idempotent; workers should publish status transitions transactionally.
+- Queue-driven Pods: Pub/Sub backlog creates one-shot KEDA jobs that pull, process, acknowledge, and exit; the gateway is not coupled to ingestion concurrency.
 
 ## Retrieval pipeline
 

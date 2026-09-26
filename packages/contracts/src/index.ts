@@ -27,10 +27,12 @@ export const ingestRequestSchema = z.object({
     .refine((v) => v.startsWith('gs://'), 'Only gs:// URIs are accepted'),
   displayName: z.string().min(1).max(256),
 });
+export const queuedIngestRequestSchema = ingestRequestSchema.extend({tenantId: tenantIdSchema});
 
 export type ChatRequest = z.infer<typeof chatRequestSchema>;
 export type ChatResponse = z.infer<typeof chatResponseSchema>;
 export type IngestRequest = z.infer<typeof ingestRequestSchema>;
+export type QueuedIngestRequest = z.infer<typeof queuedIngestRequestSchema>;
 
 export interface Principal {
   subject: string;
